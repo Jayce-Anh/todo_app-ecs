@@ -8,7 +8,8 @@ module "bastion" {
   instance_name              = var.instance_name
   iops                       = var.iops
   volume_size                = var.volume_size
-  source_ingress_ec2_sg_cidr = data.terraform_remote_state.network.outputs.source_ingress_ec2_sg_cidr
+  vpc_id                     = data.terraform_remote_state.network.outputs.vpc_id
+  source_ingress_ec2_sg_cidr = var.source_ingress_ec2_sg_cidr
   path_user_data             = var.path_user_data
   key_name                   = var.key_name
   subnet_id                  = data.terraform_remote_state.network.outputs.public_subnet_ids[0]
@@ -30,38 +31,48 @@ module "bastion" {
   }
 }
 
-# ############################ EXTERNAL LB ############################
-# module "alb" {
-#   source                 = "../../../modules/alb/external"
-#   project                = var.project
-#   tags                   = var.tags
-#   lb_name                = var.lb_name
-#   vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
-#   dns_cert_arn           = module.acm_alb.cert_arn
-#   subnet_ids             = data.terraform_remote_state.network.outputs.public_subnet_ids
-#   source_ingress_sg_cidr = var.source_ingress_sg_cidr
+############################ EXTERNAL LB ############################
+module "alb" {
+  source                 = "../../../modules/alb/external"
+  project                = local.project
+  tags                   = local.tags
+  lb_name                = var.lb_name
+  vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
+  dns_cert_arn           = module.acm_alb.cert_arn
+  subnet_ids             = data.terraform_remote_state.network.outputs.public_subnet_ids
+  source_ingress_sg_cidr = var.source_ingress_sg_cidr
 
-#   target_groups = var.target_groups
-# }
+  target_groups = {
+    be = {
+      name              = var.target_groups.be.name
+      service_port      = var.target_groups.be.service_port
+      health_check_path = var.target_groups.be.health_check_path
+      priority          = var.target_groups.be.priority
+      host_header       = var.target_groups.be.host_header
+      target_type       = var.target_groups.be.target_type
+      ec2_id            = var.target_groups.be.ec2_id 
+    }
+  }
+}
 
-# ############################ ACM ############################
-# #Certificate for ALB
-# module "acm_alb" {
-#   source  = "../../../modules/acm"
-#   project = var.project
-#   tags    = var.tags
-#   domain  = var.domain_alb
-#   region  = var.project.region
-# }
+############################ ACM ############################
+#Certificate for ALB
+module "acm_alb" {
+  source  = "../../../modules/acm"
+  project = local.project
+  tags    = local.tags
+  domain  = var.domain_alb
+  region  = local.project.region
+}
 
-# #Certificate for CloudFront
-# module "acm_s3cf" {
-#   source  = "../../../modules/acm"
-#   project = var.project
-#   tags    = var.tags
-#   domain  = var.domain_s3cf
-#   region  = var.region_s3cf
-# }
+#Certificate for CloudFront
+module "acm_s3cf" {
+  source  = "../../../modules/acm"
+  project = local.project
+  tags    = local.tags
+  domain  = var.domain_s3cf
+  region  = local.project.region
+}
 
 # ########################### CLOUDFRONT ############################
 # module "cloudfront" {

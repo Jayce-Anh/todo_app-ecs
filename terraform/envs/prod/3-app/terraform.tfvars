@@ -5,8 +5,9 @@ instance_type = "t3a.small"
 instance_name = "bastion"
 iops = 3000
 volume_size = 30
-path_user_data = "${path.root}/scripts/user_data/user_data.sh"
+path_user_data = "../scripts/user_data/ubuntu-user_data.sh"
 key_name = "lab-jayce"
+source_ingress_ec2_sg_cidr = ["0.0.0.0/0"]
 sg_ingress = {
   rule1 = {
     from_port   = 22
@@ -22,27 +23,27 @@ sg_ingress = {
   }
 }
 
-# #---------External LB---------#
-# lb_name = "ex-alb"
-# source_ingress_sg_cidr = ["0.0.0.0/0"]
-# target_groups = {
-#   be = {
-#     name              = "be"
-#     service_port      = 5000
-#     health_check_path = "/health"
-#     priority          = 1
-#     host_header       = "todo-be.jayce-lab.work"
-#     target_type       = "ip"
-#     ec2_id            = null
-#   }
-# }
+#---------External LB---------#
+lb_name = "ex-alb"
+source_ingress_sg_cidr = ["0.0.0.0/0"]
+target_groups = {
+  be = {
+    name              = "be"
+    service_port      = 5000
+    health_check_path = "/health"
+    priority          = 1
+    host_header       = "todo-be.jayce-lab.work"
+    target_type       = "ip"
+    ec2_id            = ""
+  }
+}
 
-# #---------ACM---------#
-# # Certificate for ALB
-# domain_alb = "*.jayce-lab.work"
-# # Certificate for CloudFront
-# domain_s3cf = "*.jayce-lab.work"
-# region_s3cf = "us-east-1"
+#---------ACM---------#
+# Certificate for ALB
+domain_alb = "*.jayce-lab.work"
+# Certificate for CloudFront
+domain_s3cf = "*.jayce-lab.work"
+region_s3cf = "us-east-1"
 
 
 # #------------CloudFront---------#

@@ -41,9 +41,14 @@ variable "instance_name" {
 
 variable "subnet_id" {}
 
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID where the EC2 instance will be created"
+}
+
 variable "alb_sg_id" {
   type        = string
-  default     = null
+  default     = "" # empty string means no ALB security group
   description = "Security group ID of ALB (optional)"
 }
 
