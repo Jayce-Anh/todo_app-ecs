@@ -1,4 +1,6 @@
-############################ BASTION ############################
+############################ APPLICATION ########################
+
+#---------Bastion---------#
 module "bastion" {
   source                     = "../../../modules/ec2"
   project                    = local.project
@@ -31,7 +33,7 @@ module "bastion" {
   }
 }
 
-############################ EXTERNAL LB ############################
+#-----------External LB------------#
 module "alb" {
   source                 = "../../../modules/alb/external"
   project                = local.project
@@ -55,83 +57,55 @@ module "alb" {
   }
 }
 
-############################ ACM ############################
-#Certificate for ALB
-module "acm_alb" {
-  source  = "../../../modules/acm"
-  project = local.project
-  tags    = local.tags
-  domain  = var.domain_alb
-  region  = local.project.region
+#------------CloudFront------------#
+module "cloudfront" {
+  source                = "../../../modules/cloudfront"
+  project               = local.project
+  tags                  = local.tags
+  service_name          = var.service_name
+  cf_cert_arn           = module.acm_s3cf.cert_arn
+  s3_force_del          = var.cloudfront_force_destroy
+  cloudfront_domain     = var.cloudfront_domain
+  custom_error_response = var.custom_error_response
 }
 
-#Certificate for CloudFront
-module "acm_s3cf" {
-  source  = "../../../modules/acm"
+#-----------RDS------------#
+module "rds" {
+  source  = "../../../modules/rds"
   project = local.project
   tags    = local.tags
-  domain  = var.domain_s3cf
-  region  = local.project.region
+
+  rds_name = var.rds_name
+  db_name  = local.project.name
+  multi_az = var.rds_multi_az
+  allowed_sg_ids_access_rds = [
+    module.bastion.ec2_sg_id,
+    module.ecs.ecs_tasks_sg_id,
+  ]
+
+  rds_storage_type = var.rds_storage_type
+  rds_iops         = var.rds_iops
+  rds_throughput   = var.rds_throughput
+
+  rds_storage     = var.rds_storage
+  rds_max_storage = var.rds_max_storage
+
+  # Credentials for RDS creation (also store these in Secrets Manager manually)
+  rds_username = var.rds_username
+  rds_password = var.rds_password
+
+  rds_class                             = var.rds_class
+  rds_engine                            = var.rds_engine
+  rds_engine_version                    = var.rds_engine_version
+  rds_port                              = var.rds_port
+  rds_backup_retention_period           = var.rds_backup_retention_period
+  performance_insights_retention_period = var.performance_insights_retention_period
+
+  rds_family        = var.rds_family
+  aws_db_parameters = var.aws_db_parameters
 }
 
-# ########################### CLOUDFRONT ############################
-# module "cloudfront" {
-#   source                = "../../../modules/cloudfront"
-#   project               = var.project
-#   tags                  = var.tags
-#   service_name          = var.service_name
-#   cf_cert_arn           = module.acm_s3cf.cert_arn
-#   s3_force_del          = var.cloudfront_force_destroy
-#   cloudfront_domain     = var.cloudfront_domain
-#   custom_error_response = var.custom_error_response
-# }
-
-# ############################# ECR ###################################
-# module "ecr" {
-#   source          = "../../../modules/ecr"
-#   project         = var.project
-#   tags            = var.tags
-#   s3_force_del    = var.ecr_force_destroy
-#   source_services = var.source_services
-# }
-
-# ############################# RDS #################################
-# module "rds" {
-#   source  = "../../../modules/rds"
-#   project = var.project
-#   network = data.terraform_remote_state.network.outputs
-#   tags    = var.tags
-
-#   rds_name = var.rds_name
-#   db_name  = var.project.name
-#   multi_az = var.rds_multi_az
-#   allowed_sg_ids_access_rds = [
-#     module.bastion.ec2_sg_id,
-#     module.ecs.ecs_tasks_sg_id,
-#   ]
-
-#   rds_storage_type = var.rds_storage_type
-#   rds_iops         = var.rds_iops
-#   rds_throughput   = var.rds_throughput
-
-#   rds_storage     = var.rds_storage
-#   rds_max_storage = var.rds_max_storage
-
-#   rds_username = var.rds_username
-#   rds_password = var.rds_password
-
-#   rds_class                             = var.rds_class
-#   rds_engine                            = var.rds_engine
-#   rds_engine_version                    = var.rds_engine_version
-#   rds_port                              = var.rds_port
-#   rds_backup_retention_period           = var.rds_backup_retention_period
-#   performance_insights_retention_period = var.performance_insights_retention_period
-
-#   rds_family        = var.rds_family
-#   aws_db_parameters = var.aws_db_parameters
-# }
-
-# ############################ REDIS #################################
+#------------Redis------------#
 # module "redis" {
 #   source                           = "../../../modules/redis"
 #   project                          = var.project
@@ -152,24 +126,8 @@ module "acm_s3cf" {
 #   redis_parameters = var.redis_parameters
 # }
 
-# ############################# SECRET MANAGER ############################
-# module "secret_manager" {
-#   source      = "../../../modules/secret_manager"
-#   project     = var.project
-#   tags        = var.tags
-#   secret_name = var.secret_name
-# }
-
-# ############################# PARAMETER STORE ############################
-# module "parameter_store" {
-#   source          = "../../../modules/parameter_store"
-#   project         = var.project
-#   tags            = var.tags
-#   source_services = var.parameter_store_services
-# }
-
-# ################################ ECS #######################################
-# module "ecs" {
+#-----------ECS------------#
+  # module "ecs" {
 #   source           = "../../../modules/ecs"
 #   project          = var.project
 #   tags             = var.tags
