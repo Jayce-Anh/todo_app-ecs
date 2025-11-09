@@ -1,38 +1,5 @@
 ############################ APPLICATION ########################
 
-#---------Bastion---------#
-module "bastion" {
-  source                     = "../../../modules/ec2"
-  project                    = local.project
-  tags                       = local.tags
-  enabled_eip                = var.enabled_eip
-  instance_type              = var.instance_type
-  instance_name              = var.instance_name
-  iops                       = var.iops
-  volume_size                = var.volume_size
-  vpc_id                     = data.terraform_remote_state.network.outputs.vpc_id
-  source_ingress_ec2_sg_cidr = var.source_ingress_ec2_sg_cidr
-  path_user_data             = var.path_user_data
-  key_name                   = var.key_name
-  subnet_id                  = data.terraform_remote_state.network.outputs.public_subnet_ids[0]
-  alb_sg_id                  = module.alb.lb_sg_id
-
-  sg_ingress = {
-    rule1 = {
-      from_port   = var.sg_ingress.rule1.from_port
-      to_port     = var.sg_ingress.rule1.to_port
-      protocol    = var.sg_ingress.rule1.protocol
-      description = var.sg_ingress.rule1.description
-    }
-    rule2 = {
-      from_port   = var.sg_ingress.rule2.from_port
-      to_port     = var.sg_ingress.rule2.to_port
-      protocol    = var.sg_ingress.rule2.protocol
-      description = var.sg_ingress.rule2.description
-    }
-  }
-}
-
 #-----------External LB------------#
 module "alb" {
   source                 = "../../../modules/alb/external"
@@ -40,7 +7,8 @@ module "alb" {
   tags                   = local.tags
   lb_name                = var.lb_name
   vpc_id                 = data.terraform_remote_state.network.outputs.vpc_id
-  dns_cert_arn           = module.acm_alb.cert_arn
+  dns_cert_arn           = data.terraform_remote_state.dependence.outputs.acm_alb_arn
+  enable_https_listener  = true
   subnet_ids             = data.terraform_remote_state.network.outputs.public_subnet_ids
   source_ingress_sg_cidr = var.source_ingress_sg_cidr
 
@@ -52,7 +20,7 @@ module "alb" {
       priority          = var.target_groups.be.priority
       host_header       = var.target_groups.be.host_header
       target_type       = var.target_groups.be.target_type
-      ec2_id            = var.target_groups.be.ec2_id 
+      ec2_id            = var.target_groups.be.ec2_id
     }
   }
 }
@@ -63,7 +31,7 @@ module "cloudfront" {
   project               = local.project
   tags                  = local.tags
   service_name          = var.service_name
-  cf_cert_arn           = module.acm_s3cf.cert_arn
+  cf_cert_arn           = data.terraform_remote_state.dependence.outputs.acm_s3cf_arn
   s3_force_del          = var.cloudfront_force_destroy
   cloudfront_domain     = var.cloudfront_domain
   custom_error_response = var.custom_error_response
@@ -71,18 +39,18 @@ module "cloudfront" {
 
 #-----------RDS------------#
 module "rds" {
-  source  = "../../../modules/rds"
-  project = local.project
-  tags    = local.tags
-
-  rds_name = var.rds_name
-  db_name  = local.project.name
-  multi_az = var.rds_multi_az
+  source     = "../../../modules/database/rds"
+  project    = local.project
+  tags       = local.tags
+  vpc_id     = data.terraform_remote_state.network.outputs.vpc_id
+  subnet_ids = data.terraform_remote_state.network.outputs.private_subnet_ids
+  rds_name   = var.rds_name
+  db_name    = local.project.name
+  multi_az   = var.rds_multi_az
   allowed_sg_ids_access_rds = [
-    module.bastion.ec2_sg_id,
+    data.terraform_remote_state.dependence.outputs.bastion_sg_id,
     module.ecs.ecs_tasks_sg_id,
   ]
-
   rds_storage_type = var.rds_storage_type
   rds_iops         = var.rds_iops
   rds_throughput   = var.rds_throughput
@@ -91,8 +59,8 @@ module "rds" {
   rds_max_storage = var.rds_max_storage
 
   # Credentials for RDS creation (also store these in Secrets Manager manually)
-  rds_username = var.rds_username
-  rds_password = var.rds_password
+  rds_username = local.be_secrets["DB_USERNAME"]
+  rds_password = local.be_secrets["DB_PASSWORD"]
 
   rds_class                             = var.rds_class
   rds_engine                            = var.rds_engine
@@ -106,34 +74,51 @@ module "rds" {
 }
 
 #------------Redis------------#
-# module "redis" {
-#   source                           = "../../../modules/redis"
-#   project                          = var.project
-#   network                          = data.terraform_remote_state.network.outputs
-#   tags                             = var.tags
-#   redis_name                       = var.redis_name
-#   redis_engine                     = var.redis_engine
-#   redis_engine_version             = var.redis_engine_version
-#   redis_port                       = var.redis_port
-#   redis_num_cache_nodes            = var.redis_num_cache_nodes
-#   redis_node_type                  = var.redis_node_type
-#   redis_snapshot_retention_limit   = var.redis_snapshot_retention_limit
-#   redis_family                     = var.redis_family
-#   allowed_cidr_blocks_access_redis = var.allowed_cidr_blocks_access_redis
-#   allowed_sg_ids_access_redis = [
-#     module.ecs.ecs_tasks_sg_id
-#   ]
-#   redis_parameters = var.redis_parameters
-# }
+module "redis" {
+  source                           = "../../../modules/database/redis"
+  project                          = local.project
+  tags                             = local.tags
+  vpc_id                           = data.terraform_remote_state.network.outputs.vpc_id
+  subnet_ids                       = data.terraform_remote_state.network.outputs.private_subnet_ids
+  redis_name                       = var.redis_name
+  redis_engine                     = var.redis_engine
+  redis_engine_version             = var.redis_engine_version
+  redis_port                       = var.redis_port
+  redis_num_cache_nodes            = var.redis_num_cache_nodes
+  redis_node_type                  = var.redis_node_type
+  redis_snapshot_retention_limit   = var.redis_snapshot_retention_limit
+  redis_family                     = var.redis_family
+  allowed_cidr_blocks_access_redis = var.allowed_cidr_blocks_access_redis
+  allowed_sg_ids_access_redis = [
+    module.ecs.ecs_tasks_sg_id
+  ]
+  redis_parameters = var.redis_parameters
+}
 
 #-----------ECS------------#
-  # module "ecs" {
-#   source           = "../../../modules/ecs"
-#   project          = var.project
-#   tags             = var.tags
-#   vpc_id           = data.terraform_remote_state.network.outputs.vpc_id
-#   lb_sg_id         = module.alb.lb_sg_id
-#   target_group_arn = module.alb.tg_arns["be"]
-#   subnets          = data.terraform_remote_state.network.outputs.private_subnet_ids
-#   task_definitions = var.ecs_task_definitions
-# }
+module "ecs" {
+  source           = "../../../modules/ecs"
+  project          = local.project
+  tags             = local.tags
+  vpc_id           = data.terraform_remote_state.network.outputs.vpc_id
+  lb_sg_id         = module.alb.lb_sg_id
+  target_group_arn = module.alb.tg_arns["be"]
+  subnets          = data.terraform_remote_state.network.outputs.private_subnet_ids
+  task_definitions = {
+    "be" = {
+      container_name       = var.ecs_task_definitions.be.container_name
+      container_image      = "${local.project.account_id}.dkr.ecr.${local.project.region}.amazonaws.com/${data.terraform_remote_state.dependence.outputs.ecr_name}:latest"
+      desired_count        = var.ecs_task_definitions.be.desired_count
+      cpu                  = var.ecs_task_definitions.be.cpu
+      memory               = var.ecs_task_definitions.be.memory
+      container_port       = var.ecs_task_definitions.be.container_port
+      host_port            = var.ecs_task_definitions.be.host_port
+      health_check_path    = var.ecs_task_definitions.be.health_check_path
+      enable_load_balancer = var.ecs_task_definitions.be.enable_load_balancer
+      load_balancer = {
+        target_group_port = var.ecs_task_definitions.be.load_balancer.target_group_port
+        container_port    = var.ecs_task_definitions.be.load_balancer.container_port
+      }
+    }
+  }
+}

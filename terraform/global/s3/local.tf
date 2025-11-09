@@ -5,7 +5,7 @@ locals {
     name = "todo"
     env = "prod"
     region = "us-east-1"
-    account_ids = ["701604998432"]
+    account_ids = ["701604998432","999999999999"]
   }
   # Tags configuration
   tags = {

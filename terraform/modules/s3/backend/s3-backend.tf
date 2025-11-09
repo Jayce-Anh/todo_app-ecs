@@ -1,6 +1,6 @@
 ##################### S3 BACKEND STATE #####################
 resource "aws_s3_bucket" "backend_state" {
-  bucket = "${var.project.account_ids}-${var.project.name}-terraform-state" # Choose the first account ID [0]
+  bucket = "${var.project.account_ids[var.account_index]}-${var.project.name}-terraform-state" # Choose the first account ID [0]
   
   lifecycle {
     prevent_destroy = true

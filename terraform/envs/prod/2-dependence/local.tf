@@ -2,10 +2,10 @@
 locals {
   # Project configuration
   project = {
-    name = "todo"
-    env = "prod"
-    region = "us-east-1"
-    account_ids = [701604998432]
+    name       = "todo"
+    env        = "prod"
+    region     = "us-east-1"
+    account_id = 701604998432
   }
   # Tags configuration
   tags = {
@@ -25,5 +25,6 @@ data "terraform_remote_state" "network" {
     region = "us-east-1"
   }
 }
+
 
 

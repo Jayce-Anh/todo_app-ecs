@@ -3,7 +3,7 @@
 resource "aws_security_group" "sg_db" {
   name        = "${var.project.env}-${var.project.name}-sg-rds-${var.rds_name}"
   description = "SG for db ${var.rds_name}"
-  vpc_id      = var.network.vpc_id
+  vpc_id      = var.vpc_id
 
   egress {
     from_port   = 0

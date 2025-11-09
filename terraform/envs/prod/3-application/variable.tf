@@ -1,81 +1,8 @@
 ############################## VARIABLES ##############################
 
-#-----------Infra Services---------#
-# ACM
-variable "domain_alb" {type = string}
-variable "domain_s3cf" {type = string}
-variable "region_s3cf" {
-  type = string
-  default = "us-east-1"
-}
-
-# Secret Manager
-variable "secret_name" {type = string}
-variable "recovery_window_in_days" {
-  type = number
-  default = 30
-}
-
-# Parameter Store
-# variable "parameter_store_services" {
-#   type = list(string)
-# }
-
-# ECR
-variable "ecr_force_destroy" {
-  type = bool
-  default = true
-}
-variable "source_services" {
-  type = list(string)
-}
-
-#-----------Application---------#
-# Bastion
-variable "enabled_eip" {
-  type = bool
-  default = true
-}
-variable "instance_type" {type = string}
-variable "instance_name" {
-  type = string
-  default = "bastion"
-}
-variable "iops" {
-  type = number
-  default = 3000
-}
-variable "volume_size" {
-  type = number
-  default = 30
-}
-variable "path_user_data" {type = string}
-variable "key_name" {type = string}
-variable "source_ingress_ec2_sg_cidr" {
-  type = list(string)
-  default = ["0.0.0.0/0"]
-  description = "CIDR blocks allowed to access the bastion EC2 instance"
-}
-variable "sg_ingress" {
-  type = object({
-    rule1 = object({
-      from_port   = number
-      to_port     = number
-      protocol    = string
-      description = string
-    })
-    rule2 = object({
-      from_port   = number
-      to_port     = number
-      protocol    = string
-      description = string
-    })
-  })
-}
-
-# External LB
-variable "lb_name" {type = string}
-variable "source_ingress_sg_cidr" {type = list(string)}
+#------------External LB------------#
+variable "lb_name" { type = string }
+variable "source_ingress_sg_cidr" { type = list(string) }
 variable "target_groups" {
   type = map(object({
     name              = string
@@ -88,11 +15,11 @@ variable "target_groups" {
   }))
 }
 
-# CloudFront
-variable "service_name" {type = string}
-variable "cloudfront_domain" {type = string}
+#------------CloudFront------------#
+variable "service_name" { type = string }
+variable "cloudfront_domain" { type = string }
 variable "cloudfront_force_destroy" {
-  type = bool
+  type    = bool
   default = true
 }
 variable "custom_error_response" {
@@ -103,70 +30,114 @@ variable "custom_error_response" {
   }))
 }
 
-# RDS
-variable "rds_name" {type = string}
+#------------RDS------------#
+variable "rds_name" { type = string }
 variable "rds_multi_az" {
-  type = bool
+  type    = bool
   default = false
 }
-variable "rds_storage_type" {type = string}
-variable "rds_iops" {type = number}
-variable "rds_throughput" {type = number}
-variable "rds_storage" {type = number}
-variable "rds_max_storage" {type = number}
+variable "rds_storage_type" {
+  type    = string
+  default = "gp3"
+}
+variable "rds_iops" {
+  type    = number
+  default = 3000
+}
+variable "rds_throughput" {
+  type    = number
+  default = 125
+}
+variable "rds_storage" {
+  type    = number
+  default = 30
+}
+variable "rds_max_storage" {
+  type    = number
+  default = 100
+}
 variable "rds_username" {
-  type      = string
-  default   = "admin"
-  sensitive = true
+  type        = string
+  default     = "admin"
+  description = "Change this later with Secrets Manager"
+  sensitive   = true
 }
 variable "rds_password" {
-  type      = string
-  sensitive = true
+  type        = string
+  default     = "password"
+  description = "Change this later with Secrets Manager"
+  sensitive   = true
 }
-variable "rds_class" {type = string}
-variable "rds_engine" {type = string}
-variable "rds_engine_version" {type = string}
-variable "rds_port" {type = number}
-variable "rds_backup_retention_period" {type = number}
-variable "performance_insights_retention_period" {type = number}
-variable "rds_family" {type = string}
+variable "rds_class" {
+  type    = string
+  default = "db.t4g.small"
+}
+variable "rds_engine" { type = string }
+variable "rds_engine_version" { type = string }
+variable "rds_port" { type = number }
+variable "rds_backup_retention_period" {
+  type    = number
+  default = 7
+}
+variable "performance_insights_retention_period" {
+  type    = number
+  default = 0
+}
+variable "rds_family" { type = string }
 variable "aws_db_parameters" {
   type = map(any)
 }
 
-# Redis
-variable "redis_name" {type = string}
-variable "redis_engine" {type = string}
-variable "redis_engine_version" {type = string}
-variable "redis_port" {type = number}
-variable "redis_num_cache_nodes" {type = number}
-variable "redis_node_type" {type = string}
-variable "redis_snapshot_retention_limit" {type = number}
-variable "redis_family" {type = string}
+#------------Redis------------#
+variable "redis_name" { type = string }
+variable "redis_engine" { type = string }
+variable "redis_engine_version" {
+  type    = string
+  default = "6.2"
+}
+variable "redis_port" {
+  type    = number
+  default = 6379
+}
+variable "redis_num_cache_nodes" {
+  type    = number
+  description = "Number of cache nodes in the cluster"
+}
+variable "redis_node_type" {
+  type    = string
+  default = "cache.t4g.small"
+}
+variable "redis_snapshot_retention_limit" {
+  type    = number
+  default = 1
+}
+variable "redis_family" { type = string }
 variable "allowed_cidr_blocks_access_redis" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 variable "redis_parameters" {
   type = map(string)
+  default = {
+    "maxmemory-policy" = "allkeys-lru"
+  }
 }
 
-# ECS
-# variable "ecs_task_definitions" {
-#   type = map(object({
-#     container_name       = string
-#     container_image      = string
-#     desired_count        = number
-#     cpu                  = number
-#     memory               = number
-#     container_port       = number
-#     host_port            = number
-#     health_check_path    = string
-#     enable_load_balancer = bool
-#     load_balancer = object({
-#       target_group_port = number
-#       container_port    = number
-#     })
-#   }))
-# }
+#------------ECS------------#
+variable "ecs_task_definitions" {
+  type = map(object({
+    container_name       = string
+    desired_count        = number
+    cpu                  = optional(number, 1024)
+    memory               = optional(number, 2048)
+    container_port       = number
+    host_port            = number
+    health_check_path    = string
+    enable_load_balancer = optional(bool, true)
+    load_balancer = object({
+      target_group_port = number
+      container_port    = number
+    })
+  }))
+}
 

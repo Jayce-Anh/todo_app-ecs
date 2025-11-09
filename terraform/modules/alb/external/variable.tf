@@ -4,7 +4,7 @@ variable "project" {
     name = string
     env = string
     region = string
-    account_ids = list(number)
+    account_id = number
   })
 }
 
@@ -25,6 +25,12 @@ variable "subnet_ids" {
 variable "dns_cert_arn" {
   type = string
   default = null
+}
+
+variable "enable_https_listener" {
+  type = bool
+  default = false
+  description = "Enable HTTPS listener (requires dns_cert_arn)"
 }
 
 variable "source_ingress_sg_cidr" {

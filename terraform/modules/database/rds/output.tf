@@ -4,4 +4,3 @@ output "rds_endpoint" {
 }
 
 
-

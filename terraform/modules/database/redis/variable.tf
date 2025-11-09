@@ -1,9 +1,9 @@
 variable "project" {
   type = object({
-    region     = string
+    name = string
+    env = string
+    region = string
     account_id = number
-    name       = string
-    env        = string
   })
 }
 
@@ -58,7 +58,10 @@ variable "redis_snapshot_retention_limit" {
   type = number
 }
 
+variable "subnet_ids" {
+  type = list(string)
+}
 
-
-
-
+variable "vpc_id" {
+  type = string
+}

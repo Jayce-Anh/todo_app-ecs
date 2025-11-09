@@ -8,6 +8,11 @@ variable "project" {
   })
 }
 
+variable "account_index" {
+  type = number
+  description = "Account index"
+}
+
 variable "tags" {
   type = object({
     Name = string

@@ -5,7 +5,7 @@ resource "aws_s3_bucket" "s3" {
   force_destroy = var.s3_force_del
 
   tags = merge(var.tags, {
-    Name = "${var.project.env}-${var.project.name}-${var.service_name}-s3cf"
+    Name = "${var.project.env}-${var.project.name}-${var.service_name}-${var.s3cf_bucket_name}"
   })
 }
 

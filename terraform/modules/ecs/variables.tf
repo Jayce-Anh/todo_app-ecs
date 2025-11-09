@@ -3,7 +3,7 @@ variable "project" {
     name = string
     env  = string
     region = string
-    account_ids = list(number)
+    account_id = number
   })
 }
 

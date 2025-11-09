@@ -1,14 +1,14 @@
 #-----------------Elasticache Subnet group-----------------
 resource "aws_elasticache_subnet_group" "subnet_group" {
   name       = "${var.project.env}-${var.project.name}-cache-${var.redis_name}"
-  subnet_ids = var.network.private_subnet_ids
+  subnet_ids = var.subnet_ids
 }
 
 #-----------------Elasticache Security group-----------------
 resource "aws_security_group" "sg" {
   name        = "${var.project.env}-${var.project.name}-sg-redis-${var.redis_name}"
   description = "SG for redis ${var.redis_name}"
-  vpc_id      = var.network.vpc_id
+  vpc_id      = var.vpc_id
 
   egress {
     from_port   = 0

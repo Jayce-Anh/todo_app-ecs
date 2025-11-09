@@ -1,26 +1,18 @@
 ############################### SECRET MANAGER - OUTPUT ###############################
 
-output "secret_name" {
-  description = "Name of the secret-manager"
-  value = aws_secretsmanager_secret.secret.name
+output "secret_names" {
+  description = "Map of secret names"
+  value       = { for k, v in aws_secretsmanager_secret.secret : k => v.name }
 }
 
-output "secret_arn" {
-  description = "ARN of the secret-manager"
-  value       = aws_secretsmanager_secret.secret.arn
+output "secret_arns" {
+  description = "Map of secret ARNs"
+  value       = { for k, v in aws_secretsmanager_secret.secret : k => v.arn }
 }
 
-output "secret_id" {
-  description = "ID of the secret-manager"
-  value       = aws_secretsmanager_secret.secret.id
-}
-
-output "secret_version_id" {
-  description = "Version ID of the secret"
-  value       = try(
-    aws_secretsmanager_secret_version.secret_with_ignore[0].version_id,
-    aws_secretsmanager_secret_version.secret_managed[0].version_id
-  )
+output "secret_ids" {
+  description = "Map of secret IDs"
+  value       = { for k, v in aws_secretsmanager_secret.secret : k => v.id }
 }
 
 

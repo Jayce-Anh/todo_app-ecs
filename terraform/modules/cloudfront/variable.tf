@@ -56,3 +56,9 @@ variable "s3_force_del" {
   type        = bool
   description = "Force destroy the S3 bucket"
 }
+
+variable "s3cf_bucket_name" {
+  type = string
+  description = "The name of the S3 bucket for CloudFront"
+  default = "s3-frontend"
+}

@@ -1,9 +1,9 @@
 variable "project" {
   type = object({
-    region     = string
+    name = string
+    env = string
+    region = string
     account_id = number
-    name       = string
-    env        = string
   })
 }
 
@@ -90,4 +90,12 @@ variable "allowed_sg_ids_access_rds" {
 variable "db_name" {
   type = string
   description = "Name of the database when creating the instance"
+}
+
+variable "subnet_ids" {
+  type = list(string)
+}
+
+variable "vpc_id" {
+  type = string
 }

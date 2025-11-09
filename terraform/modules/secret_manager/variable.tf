@@ -4,7 +4,7 @@ variable "project" {
     name = string
     env  = string
     region = string
-    account_ids = list(number)
+    account_id = number
   })
 }
 
@@ -14,26 +14,13 @@ variable "tags" {
   })
 }
 
-variable "secret_name" {
-  type        = string
-  description = "Name of the secret-manager"
-}
-
-variable "recovery_window_in_days" {
-  type        = number
-  description = "Number of days AWS waits before deleting the secret"
-  default     = 30
-}
-
-variable "secret_data" {
-  type        = map(string)
-  description = "Map of secret key-value pairs to store"
+variable "secrets" {
+  type = map(object({
+    secret_name           = string
+    use_initial_value     = optional(bool, true)
+    secret_data           = optional(map(string), {})
+    recovery_window_in_days = optional(number, 30)
+  }))
+  description = "Map of secrets to create"
   default     = {}
-  sensitive   = true
-}
-
-variable "use_initial_value" {
-  type        = bool
-  description = "If true, only sets 'init' and ignores changes. If false, uses secret_data"
-  default     = false
 }

@@ -28,7 +28,7 @@ resource "aws_lb_target_group" "tg" {
 
 #-------------------- Listener Rule of Load Balancer ---------------------
 resource "aws_lb_listener_rule" "lb_listener_rule" {
-  for_each = var.dns_cert_arn != null ? var.target_groups : {}
+  for_each = var.enable_https_listener ? var.target_groups : {}
   
   listener_arn = aws_lb_listener.lb_listener_https[0].arn
   priority     = each.value.priority

@@ -1,4 +1,8 @@
 #!/bin/bash
+#--------------Server configuration---------------#
+HOSTNAME="prod-todo-bastion"
+hostnamectl set-hostname ${HOSTNAME}
+
 #--------------Install docker--------------#
 apt-get update
 apt-get install -y cloud-utils apt-transport-https ca-certificates curl software-properties-common
@@ -24,6 +28,18 @@ docker-compose --version
 #--------------Install AWS cli---------------#
 apt-get install -y awscli
 aws --version
+
+#--------------Install Python---------------#
+apt-get install -y python3
+python3 --version
+
+#--------------Install jq---------------#
+apt-get install -y jq
+jq --version
+
+#-------------- Install mysql client---------------#
+apt-get install -y mysql-client
+mysql --version
 
 # #--------------Install CodeDeploy Agent---------------#
 # apt-get install -y ruby-full
